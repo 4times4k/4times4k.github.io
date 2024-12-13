@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>WebUSB KVM - Keyboard Video Mouse</title>
+  <script :version="1.0.3" src="/toy/veps.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "web-serial-polyfill": "https://registry.npmmirror.com/web-serial-polyfill/1.0.15/files/dist/serial.js"
+      }
+    }
+  </script>
+</head>
+
+<style>
+  * {
+    box-sizing: border-box;
+  }
+  html {
+    color-scheme: dark light;
+  }
+  body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 0;
+  }
+  #\$main {
+    position: relative;
+    width: 100%;
+    padding: 0;
+  }
+  #\$main > * {
+    display: block;
+    margin: 0 auto;
+    outline: none;
+  }
+  #\$main::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    margin: 0;
+    line-height: 2;
+    text-align: center;
+    pointer-events: none;
+    user-select: none;
+  }
+  @keyframes tips {
+    0% {
+      visibility: visible;
+    }
+  }
+  #\$main.inited:not(:focus)::after {
+    content: "Click here to focus and capture keyboard";
+    visibility: hidden;
+    animation: tips 2s;
+  }
+  #\$main:not(.inited)::after {
+    content: "Click here to initialise";
+    bottom: 0;
+    display: inline-block;
+    font-size: 24px;
+    line-height: 5;
+  }
+  #\$monitor {
+    position: relative;
+    max-width: 100%;
+    outline: none;
+  }
+  #\$monitor::-webkit-media-controls,
+  #\$monitor::-webkit-media-controls-enclosure {
+    display: none !important;
+  }
+  kbd {
+    display: inline-block;
+    padding: 1px 4px;
+    user-select: none;
+    border: 1px solid #777;
+  }
+  kbd:active {
+    background: #7777;
+  }
+  #\$paste {
+    position: relative;
+    width: 100%;
+    margin: 0;
+  }
+  #\$pasteText {
+    display: block;
+    width: 100%;
+    padding: 2px 4px 2em;
+    font-family: monospace;
+    border: 1px solid #777;
+    outline: none;
+  }
+  #\$pasteSend {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 4em;
+  }
+  #\$pasteSend:active {
+    background: #777;
+  }
+  select {
+    width: 8em;
+  }
+  .tips {
+    background: #e08700c0;
+    transition: background-color 0.7s cubic-bezier(0.3, 3, 0.7, -2);
+  }
+</style>
+
+<body>
+  <main id="$main" tabindex="-1">
+    <video id="$monitor"></video>
+    <!-- because the <button> will capture focus, so we use <kbd> instead -->
+    <!-- <div id="$keyboard"><kbd>Shift</kbd><kbd>Ctrl</kbd><kbd>Alt</kbd><kbd>Tab</kbd><kbd>Enter</kbd></div> -->
+  </main>
+  <select id="$audio">
+    <option value="false">No audio</option>
+  </select>
+  <select id="$video">
+    <option value="false">No video</option>
+  </select>
+  <select id="$avtweak">
+    <option value hidden selected>A/V tweak</option>
+    <option value="video_w1920">Video width to 1920</option>
+    <option value="video_w1280">Video width to 1280</option>
+    <option value="video_w800">Video width to 800</option>
+    <option value="video_r30">Video fps to 30</option>
+    <option value="video_cfg">Video config</option>
+    <option value="audio_cfg">Audio config</option>
+  </select>
+  <button id="$fullscreen">Fullscreen</button>
+  <button id="$scale">Scale</button>
+  <div style="flex-grow: 1"></div>
+  <button id="$captureMouse">Capture mouse</button>
+  <select id="$comboKeys">
+    <option value hidden selected>Combo keys</option>
+    <option value="alt_f4">Alt+F4</option>
+    <option value="ctrl_alt_del">Ctrl+Alt+Del</option>
+    <option value="ctrl_alt_f1">Ctrl+Alt+F1</option>
+    <option value="ctrl_alt_f2">Ctrl+Alt+F2</option>
+    <option value="ctrl_alt_f3">Ctrl+Alt+F3</option>
+    <option value="ctrl_alt_f4">Ctrl+Alt+F4</option>
+    <option value="ctrl_alt_f5">Ctrl+Alt+F5</option>
+    <option value="ctrl_alt_f6">Ctrl+Alt+F6</option>
+    <option value="ctrl_alt_f7">Ctrl+Alt+F7</option>
+    <option value="ctrl_alt_f8">Ctrl+Alt+F8</option>
+    <option value="ctrl_alt_f9">Ctrl+Alt+F9</option>
+  </select>
+  <figure id="$paste">
+    <textarea id="$pasteText" rows="3" placeholder="Paste text here"></textarea>
+    <button id="$pasteSend">Send</button>
+  </figure>
+</body>
+
+<script type="module">
+  $audio.onchange = $video.onchange = async () => {
+    // https://stackoverflow.com/a/73550841/11338291
+    for (const t of $monitor.srcObject?.getTracks() ?? [])
+      t.stop(), $monitor.srcObject.removeTrack(t);
+    // width: { max: 1280 }, height: { max: 720 }, facingMode: { ideal: "environment" },
+    // https://developer.mozilla.org/en-US/docs/Web/API/MediaTrackConstraints
+    const streamCfg = { audio: eval($audio.value), video: eval($video.value) };
+    $monitor.srcObject = await navigator.mediaDevices.getUserMedia(streamCfg);
+    $monitor.play();
+  };
+  $avtweak.onchange = () => {
+    const modify = (el, f) => (el.selectedOptions[0].value = f(el.value));
+    if ($avtweak.value === "audio_cfg")
+      modify($audio, (v) => prompt("audio", v));
+    if ($avtweak.value === "video_cfg")
+      modify($video, (v) => prompt("video", v));
+    if ($avtweak.value === "video_w1920")
+      modify($video, (v) => v.replace("({", "({width:1920,"));
+    if ($avtweak.value === "video_w1280")
+      modify($video, (v) => v.replace("({", "({width:1280,"));
+    if ($avtweak.value === "video_w800")
+      modify($video, (v) => v.replace("({", "({width:800,"));
+    if ($avtweak.value === "video_r30")
+      modify($video, (v) => v.replace("({", "({frameRate:30,"));
+    $avtweak.value = "";
+    $audio.onchange();
+  };
+  $fullscreen.onclick = () => $monitor.requestFullscreen();
+  $scale.onclick = () => {
+    if ($monitor.style.maxWidth === "unset") {
+      $monitor.style.maxWidth = "100%";
+      $monitor.removeAttribute("width");
+      $monitor.removeAttribute("height");
+    } else {
+      $monitor.style.maxWidth = "unset";
+      $monitor.width = $monitor.videoWidth / devicePixelRatio;
+      $monitor.height = $monitor.videoHeight / devicePixelRatio;
+    }
+  };
+  let warn = () => new Promise((t, f) => ((t = "not inited"), alert(t), f(t))); // warn while the target function (video or usb keyboard mouse) not inited
+  let [reader, writer] = [{ read: warn }, { write: warn }];
+  const initSerial = async () => {
+    let port = null;
+    if (navigator?.serial?.requestPort) {
+      port = await navigator.serial.requestPort();
+    } else if (navigator?.usb?.requestDevice) {
+      // todo: using polyfill  `Failed to execute 'open' on 'USBDevice': Access denied.`
+      const serialPolyfill = import("web-serial-polyfill");
+      const device = await navigator.usb.requestDevice({ filters: [] });
+      console.log(device);
+      port = new (await serialPolyfill).SerialPort(device, {
+        usbControlInterfaceClass: 255,
+        usbTransferInterfaceClass: 255,
+      });
+    }
+    const opened = port.open({ baudRate: +prompt("baud rate = ", "9600") });
+    const timeout = new Promise((resolve, reject) => setTimeout(reject, 900));
+    try {
+      await Promise.race([timeout, opened]);
+    } catch (e) {
+      $pasteText.classList.add("tips");
+      setTimeout(() => $pasteText.classList.remove("tips"), 2000);
+      $pasteText.textContent =
+        "for linux, try: sudo chmod 777 /dev/ttyUSB0\nerror = " +
+        JSON.stringify(e);
+      throw e;
+    }
+    reader = port.readable.getReader();
+    writer = port.writable.getWriter();
+  };
+  const initMonitor = async () => {
+    const opt = { video: true, audio: true };
+    const tempStream = await navigator.mediaDevices.getUserMedia(opt); // grant permission first, otherwise the enumerateDevices() below will returns empty
+    for (const t of tempStream.getTracks() ?? [])
+      t.stop(), tempStream.removeTrack(t); // stop tracks, the above getUserMedia() will open default tracks, usually the laptop's built-in camera
+    for (const info of await navigator.mediaDevices.enumerateDevices()) {
+      const select = { audioinput: $audio, videoinput: $video }[info.kind];
+      if (!select) continue;
+      const option = select.appendChild(document.createElement("option"));
+      option.value = `({deviceId:'${info.deviceId}'})`;
+      option.textContent = info.label.trim() || "id:" + info.deviceId.slice(7);
+    }
+    $video.classList.add("tips");
+    setTimeout(() => $video.classList.remove("tips"), 2000);
+  };
+  $main.onclick = async () => {
+    $main.focus();
+    if ($main.classList.contains("inited")) return;
+    await initSerial().catch(() => {});
+    await initMonitor().catch(() => {});
+    $main.classList.add("inited");
+  };
+  const genPacket = (cmd = 0x01, ...data) => {
+    for (const v of data) if (v < 0 || v > 0xff) throw v;
+    let ret = [0x57, 0xab, 0x00, cmd, data.length, ...data];
+    let sum = new Uint8Array([0]);
+    for (const v of ret) sum[0] += v;
+    ret.push(sum[0]);
+    return ret;
+  };
+  $captureMouse.onclick = async () => {
+    $main.focus();
+    try {
+      await $monitor.requestPointerLock({ unadjustedMovement: true });
+    } catch (_) {
+      await $monitor.requestPointerLock(); // unadjustedMovement is unuseable in some environment
+    }
+  };
+  document.onpointerlockchange = () => {
+    if (document.pointerLockElement && document.pointerLockElement !== $monitor)
+      throw Error("assert error");
+    const i8clamp = (v) => Math.max(-0x7f, Math.min(v, 0x7f)); // clamp to int8
+    let [pressedBits, x, y] = [0, 0, 0];
+    let timer = null; // an modified throttle strategy
+    let f = (e) => {
+      (x += e.movementX), (y += e.movementY);
+      if (pressedBits != e.buttons || i8clamp(x) !== x || i8clamp(y) !== y) {
+        clearTimeout(timer);
+        timer = null; // force trigger
+      }
+      pressedBits = e.buttons; // so lucky, coincidence or necessity?
+      if (timer !== null) return;
+      (x = Math.round(x)), (y = Math.round(y));
+      const value = [];
+      do {
+        let [pX, pY] = [i8clamp(x), i8clamp(y)];
+        (x -= pX), (y -= pY);
+        if (pX < 0) pX = (0xff + pX) & 0xff;
+        if (pY < 0) pY = (0xff + pY) & 0xff;
+        // console.log({ pX, pY });
+        value.push(...genPacket(5, 1, pressedBits, pX, pY, 0));
+      } while (x !== 0 || y !== 0); // use "do while" loop to send mousedown/mouseup immediately
+      (x = 0), (y = 0);
+      writer.write(new Uint8Array(value)); // without await on purpose
+      timer = setTimeout(() => (timer = null), 16);
+    };
+    if (!document.pointerLockElement) f = null;
+    $monitor.onmousemove = $monitor.onmousedown = $monitor.onmouseup = f; // todo: onwhell?
+  };
+  // prettier-ignore
+  const KEYS = new Map([ // https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2
+    ["a",0x04,0],["A",0x04,1],["b",0x05,0],["B",0x05,1],["c",0x06,0],["C",0x06,1],["d",0x07,0],["D",0x07,1],["e",0x08,0],["E",0x08,1],["f",0x09,0],["F",0x09,1],["g",0x0a,0],["G",0x0a,1],["h",0x0b,0],["H",0x0b,1],["i",0x0c,0],["I",0x0c,1],["j",0x0d,0],["J",0x0d,1],["k",0x0e,0],["K",0x0e,1],["l",0x0f,0],["L",0x0f,1],["m",0x10,0],["M",0x10,1],["n",0x11,0],["N",0x11,1],["o",0x12,0],["O",0x12,1],["p",0x13,0],["P",0x13,1],["q",0x14,0],["Q",0x14,1],["r",0x15,0],["R",0x15,1],["s",0x16,0],["S",0x16,1],["t",0x17,0],["T",0x17,1],["u",0x18,0],["U",0x18,1],["v",0x19,0],["V",0x19,1],["w",0x1a,0],["W",0x1a,1],["x",0x1b,0],["X",0x1b,1],["y",0x1c,0],["Y",0x1c,1],["z",0x1d,0],["Z",0x1d,1],
+    ["1",0x1e,0],["!",0x1e,1],["2",0x1f,0],["@",0x1f,1],["3",0x20,0],["#",0x20,1],["4",0x21,0],["$",0x21,1],["5",0x22,0],["%",0x22,1],["6",0x23,0],["^",0x23,1],["7",0x24,0],["&",0x24,1],["8",0x25,0],["*",0x25,1],["9",0x26,0],["(",0x26,1],["0",0x27,0],[")",0x27,1],
+    ["Enter"    ,0x28,0],["\n",0x28,0],
+    ["Escape"   ,0x29,0],
+    ["Backspace",0x2a,0],["\b",0x2a,0],
+    ["Tab"      ,0x2b,0],["\t",0x2b,0],
+    ["Space"    ,0x2c,0],[" " ,0x2c,0],
+    ["-",0x2d,0],["_",0x2d,1],["=",0x2e,0],["+",0x2e,1],["[",0x2F,0],["{",0x2F,1],["]",0x30,0],["}",0x30,1],["\\",0x31,0],["|",0x31,1],[";",0x33,0],[":",0x33,1],["'",0x34,0],['"',0x34,1],["`",0x35,0],["~",0x35,1],[",",0x36,0],["<",0x36,1],[".",0x37,0],[">",0x37,1],["/",0x38,0],["?",0x38,1],
+    ["Pause",0x48,0],["Insert",0x49,0],["Home",0x4a,0],["PageUp",0x4b,0],["Delete",0x4c,0],["End",0x4d,0],["PageDown",0x4e,0],["ArrowRight",0x4f,0],["ArrowLeft",0x50,0],["ArrowDown",0x51,0],["ArrowUp",0x52,0],
+    ["F1",0x3a,0],["F2",0x3b,0],["F3",0x3c,0],["F4",0x3d,0],["F5",0x3e,0],["F6",0x3f,0],["F7",0x40,0],["F8",0x41,0],["F9",0x42,0],["F10",0x43,0],["F11",0x44,0],["F12",0x45,0],
+    ["Control",0xe0,0],["Shift",0xe1,0],["Alt",0xe2,0],["Meta",0xe3,0],
+  ].map(([key, hidCode, shift]) => [key, [hidCode, shift]]));
+  // keypress can not capture many keys like backspace and tab, so we use keydown/keyup instead
+  const currentDownKeys = new Set();
+  const eatKeys = new Set(); // avoid tailing control keys (press and release key A will emit event keyup[A] and keyup[Shift])
+  $main.onkeydown = async (e) => {
+    e.preventDefault(); // avoid the Tab key to switch out focus
+  };
+  $main.onkeyup = async (e) => {
+    e.preventDefault(); // avoid the Tab key to switch out focus
+    if (eatKeys.has(e.key)) return eatKeys.delete(e.key);
+    // console.log(e);
+    const [hidCode, shift] = KEYS.get(e.key);
+    let controlBits = 0;
+    if (shift) controlBits |= 0b00000010;
+    if (e.ctrlKey) (controlBits |= 0b00000001), eatKeys.add("Control");
+    if (e.shiftKey) (controlBits |= 0b00000010), eatKeys.add("Shift");
+    if (e.altKey) (controlBits |= 0b00000100), eatKeys.add("Alt");
+    if (e.metaKey) (controlBits |= 0b00001000), eatKeys.add("Meta");
+    const value = new Uint8Array([
+      ...genPacket(2, controlBits, 0, hidCode, 0, 0, 0, 0, 0),
+      ...genPacket(2, 0, 0, 0, 0, 0, 0, 0, 0),
+    ]);
+    await writer.write(value);
+  };
+  $comboKeys.onchange = async () => {
+    let key, controlBits;
+    if ($comboKeys.value === "alt_f4") [key, controlBits] = ["F4", 0b00000100];
+    if ($comboKeys.value === "ctrl_alt_del")
+      [key, controlBits] = ["Delete", 0b00000101];
+    if (/^ctrl_alt_f\d+$/.test($comboKeys.value))
+      [key, controlBits] = ["F" + $comboKeys.value.slice(10), 0b00000101];
+    const [hidCode] = KEYS.get(key);
+    const value = new Uint8Array([
+      ...genPacket(2, controlBits, 0, hidCode, 0, 0, 0, 0, 0),
+      ...genPacket(2, 0, 0, 0, 0, 0, 0, 0, 0),
+    ]);
+    $comboKeys.value = "";
+    await writer.write(value);
+  };
+  $pasteSend.onclick = async (e) => {
+    // switch to the ascii mode of ch9329 needs reconnect, which is unacceptable
+    for (const key of $pasteText.value) {
+      if (!KEYS.has(key)) return alert(`char [ ${key} ] is not an ascii char`);
+      const [hidCode, shift] = KEYS.get(key);
+      // there's a faster strategy, press down 6 keys before release. however this will cause adjacent same chars to be wrong, like "root" became "rot"
+      const value = new Uint8Array([
+        ...genPacket(2, shift ? 2 : 0, 0, hidCode, 0, 0, 0, 0, 0),
+        ...genPacket(2, 0, 0, 0, 0, 0, 0, 0, 0),
+      ]);
+      // console.log({ char, hidCode, shift, value });
+      await writer.write(value);
+    }
+  };
+  // todo:
+  // 鼠标摇杆（Android 手机）
+  // 完整的软键盘（Android 手机）（Android 上的输入法很难发送出 Shift 等按键，要提供一个 US 布局键盘）
+  // 真正的按下与弹起
+  // 录制功能
+
+  // https://developer.mozilla.org/en-US/docs/Web/API/USBDevice
+  // https://github.com/libusb/libusb/releases/
+  // https://blog.csdn.net/u014794783/article/details/108097412
+</script>
+
+<!--
+python -m http.server 9439
+sudo chmod 777 /dev/ttyUSB0
+echo "will press the key '3' then release"
+sleep 0.2 ; echo -e "\x57\xAB\x00\x02\x08\x00\x00\x20\x00\x00\x00\x00\x00\x2C" > /dev/ttyUSB0
+sleep 0.2 ; echo -e "\x57\xAB\x00\x02\x08\x00\x00\x00\x00\x00\x00\x00\x00\x0C" > /dev/ttyUSB0
+-->

@@ -1,0 +1,4 @@
+```
+name: toy
+title: Toy
+```

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width" />
+  <title>What's new in CSS?</title>
+  <script :version="0.0.1-alpha.1" src="/toy/veps.js"></script>
+</head>
+
+<style>
+  /* vscode css language server failed to parse this */
+  /* @import url("dark.css") layer(d) supports(scale: 1) and (width >= 320px); */
+  html {
+    background: #fff;
+    color: 000;
+    margin: 10px;
+  }
+  /* must be top-level */
+  @keyframes motion {
+    0% {
+      offset-distance: 0%;
+    }
+    100% {
+      offset-distance: 100%;
+    }
+  }
+  parent_ {
+    display: block;
+    /* display: flex; */
+    /* place-content: center center; */
+    /* flex-wrap: wrap; */
+    width: 80px;
+    height: 80px;
+    border: 2px solid #777;
+    /* input { } */
+    /* Invalid, because "input" is an identifier. */
+    /* https://www.w3.org/TR/css-nesting-1/#nested-style-rule */
+    & input[type="checkbox"] {
+      float: left;
+      margin: 4px 0 0 4px;
+      height: 16px;
+      width: 16px;
+      box-shadow: inset 0 0 0 2px #777, inset 0 0 0 11px #fff,
+        inset 0 0 0 11px #777;
+    }
+    & input[type="checkbox"]:checked {
+      box-shadow: inset 0 0 0 2px #777, inset 0 0 0 4px #fff,
+        inset 0 0 0 11px #777;
+    }
+    /* & img[data-object-fit] */
+    [data-object-fit] {
+      margin: 16px -20px;
+      display: inline-block;
+      /* pay attention to the path tangent! */
+      offset-path: path("M20,20 C20,100 200,0 200,100");
+      #\$loop:checked ~ & {
+        animation: motion 3000ms infinite alternate ease-in-out;
+      }
+      width: 16px;
+      height: 40px;
+      object-fit: cover;
+      border: 2px solid #777;
+    }
+    & {
+      /* & {} this is valid */
+      transition: transform 0.5s;
+    }
+    margin-top: 20px;
+    &:has(#\$on:checked) {
+      transform: rotate(30deg);
+    }
+  }
+  has_ {
+    display: block;
+    margin-top: 20px;
+    width: 80px;
+    height: 80px;
+    border: 2px solid #777;
+    /* equal to `& selector`, not `& > selector` */
+    :not(mark_) {
+      display: block;
+      width: 40px;
+      height: 16px;
+      border: 2px solid #777;
+      margin: 4px;
+    }
+    :has(+ mark_, > mark_) {
+      transform: translateX(15px);
+    }
+    :empty {
+      box-shadow: inset 0 0 0 4px #fff, inset 0 0 0 6px #777;
+    }
+    nothing_:has(a, b) {
+      /* a or b */
+      color: #002;
+    }
+    nothing_:has(a):has(b) {
+      /* a and b */
+      color: #001;
+    }
+  }
+  @media (orientation: landscape) {
+  }
+  @media (orientation: portrait) {
+  }
+  cascade_ {
+    display: block;
+    width: 80px;
+    height: 80px;
+    border: 2px solid #777;
+    margin-top: 20px;
+  }
+  cascade_ lines_ {
+    margin: 4px;
+    display: inline-block;
+    width: 40px;
+    height: 16px;
+    border: 2px solid #777;
+    /* prettier-ignore */
+    background-image: linear-gradient(to right,#fff 0px,#fff 2px,#777 2px,#777 4px,#fff 4px,#fff 6px,#777 6px,#777 8px,#fff 8px,#fff 10px,#777 10px,#777 12px,#fff 12px,#fff 14px,#777 14px,#777 16px,#fff 16px);
+    background-repeat: no-repeat;
+  }
+  lines_ {
+    background-position-x: -12px;
+  }
+  /* compare ":where" and ":is" */
+  /* The difference between :where() and :is() is that :where() always has 0 specificity,  */
+  /* whereas :is() takes on the specificity of the most specific selector in its arguments. */
+  :where(lines_) {
+    background-position-x: -8px;
+  }
+  /* @layer l4, l3; */
+  @layer l3 {
+    cascade_ lines_ {
+      background-position-x: -8px;
+    }
+  }
+  @layer l4 {
+    lines_ {
+      background-position-x: -4px;
+    }
+  }
+</style>
+
+<body>
+  <parent_>
+    <input id="$on" type="checkbox" />
+    <input id="$loop" type="checkbox" />
+    <img
+      data-object-fit
+      src='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="48" height="48"><path style="fill:none;stroke:%23777;stroke-linejoin:round" d="M12 7s5-4 10 0v13s-5-4-10 0V7S7 3 2 7v13s5-4 10 0"/></svg>'
+    />
+  </parent_>
+  <has_>
+    <has_after_></has_after_>
+    <mark_></mark_>
+    <has_false_></has_false_>
+    <has_contain_>
+      <mark_></mark_>
+    </has_contain_>
+  </has_>
+  <cascade_>
+    <lines_></lines_>
+  </cascade_>
+</body>
