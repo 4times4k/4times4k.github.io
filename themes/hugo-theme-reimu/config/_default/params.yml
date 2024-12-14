@@ -30,9 +30,9 @@ author: Kanz-
 description: "v几百你你你你啾啾啾"
 subtitle: "v几百你你你你啾啾啾"
 
-banner: "images/banner.webp"
+banner: "https://image.anosu.top/pixiv"
 # You can also write it in the form of the following url
-# banner: "https://example.com"
+# banner: "images/banner.webp"
 
 # If you want to use the srcset attribute, please enable it
 banner_srcset:
