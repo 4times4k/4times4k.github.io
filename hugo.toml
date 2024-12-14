@@ -1,0 +1,4 @@
+baseURL = 'https://otoliver.ink/'
+languageCode = 'zh-CN'
+title = 'OtoLiver'
+theme = 'hugo-theme-reimu'
