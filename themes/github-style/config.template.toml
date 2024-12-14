@@ -1,12 +1,12 @@
-baseURL = "https://meik2333.com/"
+baseURL = "https://otolivers.ink/"
 languageCode = "zh-cn"
-title = "MeiK's blog"
+title = "Kanz-'s blog"
 theme = "github-style"
 pygmentsCodeFences = true
 pygmentsUseClasses = true
 
 [params]
-  author = "MeiK"
+  author = "Kanz-"
   description = "In solitude, where we are least alone."
   github = "MeiK2333"
   facebook = "MeiK2333"
@@ -30,9 +30,9 @@ pygmentsUseClasses = true
   [params.gitalk]
     clientID = "Your client ID" # Your client ID
     clientSecret = "Your client secret" # Your client secret
-    repo = "LuvSia" # 您的博客的github地址Repository name，例如：xxxx.github.io
-    owner = "ventusoon" # 您的GitHub ID
-    admin = "ventusoon" # 您的GitHub ID
+    repo = "4times4k" # 您的博客的github地址Repository name，例如：xxxx.github.io
+    owner = "4times4k" # 您的GitHub ID
+    admin = "4times4k" # 您的GitHub ID
     id = "location.pathname" # 文章页面的链接地址就是ID
     labels = "gitalk" # Github issue labels. If you used to use Gitment, you can change it
     perPage = 15 # Pagination size, with maximum 100.
