@@ -45,7 +45,7 @@ banner_srcset:
     - src: "images/banner.webp"
       media: "(min-width: 800px)"
 
-avatar: "avatar.webp"
+avatar: "images/avatar.webp"
 
 # Open Graph
 open_graph:
@@ -63,7 +63,7 @@ open_graph:
 excerpt_link: Read More
 
 footer:
-  since: 2020 # 2020-current year
+  since: 2024 # 2020-current year
   powered: true
   count: true
   busuanzi: true
@@ -117,9 +117,9 @@ recent_posts_limits: 5
 
 anchor_icon: # default use '#' icon, you can use a hexadecimal representation of fontawesome or icon_font, like 'f0c1'
 
-reimu_cursor: true
+reimu_cursor: false
 
-icon_font: 4552607_tq6stt6tcg
+icon_font: false
 
 # https://fonts.google.com/
 # Google Fonts, higher priority than local_font
@@ -264,7 +264,7 @@ algolia_search:
 
 preloader:
   enable: true
-  text: 少女祈祷中...
+  text: 王源补水中...
   icon:  # default use inline svg for fast speed, you can use a image url, like '/images/taichi.png'
 
 # see https://github.com/D-Sketon/aos.js
@@ -295,7 +295,7 @@ animation:
 
 # see https://github.com/D-Sketon/mouse-firework
 firework:
-  enable: true
+  enable: false
   options:
     excludeElements: ["a", "button"]
     particles:
