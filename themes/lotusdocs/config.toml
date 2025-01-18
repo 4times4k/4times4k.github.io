@@ -3,5 +3,5 @@
     extended = true
     min = "0.120.0"
   [[module.imports]]
-    path = "https://github.com/gohugoio/hugo-mod-bootstrap-scss/v5"
+    path = "hugo-mod-bootstrap-scssv5"
     disable = false
