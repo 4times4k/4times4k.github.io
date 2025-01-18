@@ -3,14 +3,6 @@ languageCode = 'zh-CN'
 title = 'OtoLiver'
 theme = 'lotusdocs'
 
-[module]
-    [[module.imports]]
-        path = github.com/colinwilson/lotusdocs
-        disable = false
-    [[module.imports]]
-        path = https://github.com/gohugoio/hugo-mod-bootstrap-scss/v5
-        disable = false
-
 [markup.goldmark.renderer]
     unsafe = true
 
