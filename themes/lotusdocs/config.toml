@@ -2,6 +2,3 @@
   [module.hugoVersion]
     extended = true
     min = "0.120.0"
-  [[module.imports]]
-    path = "hugo-mod-bootstrap-scssv5"
-    disable = false
